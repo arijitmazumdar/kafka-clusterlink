@@ -1,43 +1,53 @@
-kafka-configs --bootstrap-server localhost:9093 --alter --cluster-link demo-link --add-config-file newFilters.properties
+# Kafka cluster link setup
+Objective of this project is to create an example project to execute various scenario for cluster linking provided by Confluent
 
+## Steps
+1. Run source kafka cluster
+```
+zookeeper-server-start src/zookeeper.properties 
+
+kafka-server-start src/server.properties 
+```
+2. Load data into `demo` topic
+```
+kafka-console-producer --bootstrap-server localhost:9092 --topic demo <<EOF
+Arijit
+Is
+Not
+so
+Good
+Boy
+EOF
+
+kafka-console-consumer --bootstrap-server localhost:9092 --topic demo --group srcgrp --timeout-ms 1000
+```
+3. Check consumer status in cluster 1
+```
+kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group srcgrp
+
+```
+4. Start cluster 2
+```
+zookeeper-server-start dest/zookeeper.properties 
+
+kafka-server-start dest/server.properties 
+```
+5. Create cluster link
+```
 kafka-cluster-links --bootstrap-server localhost:9093 \
       --create --link demo-link --config-file link-config.txt \
       --consumer-group-filters-json-file consumer-offset-filter.properties
 
-kafka-cluster-links --list --bootstrap-server localhost:9093
-
-kafka-mirrors --bootstrap-server localhost:9093 --list
-
-
-kafka-mirrors --create --mirror-topic demo --link demo-link \
---bootstrap-server localhost:9093 
-
-kafka-mirrors --pause --topics demo --bootstrap-server localhost:9093
-
-
-kcat -b localhost:9092 -C -t demo  -o beginning -e -G srcgrp demo
-
-
-kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group srcgrp
-
-
-consumer.offset.sync.enable=true
-
-
-kafka-configs --bootstrap-server localhost:9093 --alter --cluster-link demo-link --add-config-file newFilters.properties
-
-
-kafka-configs --bootstrap-server localhost:9092 \
-                  --alter \
-                  --cluster-link demo-link \
-                  --add-config-file link-config-update.txt \
-                  --consumer-group-filters-json-file --consumer-group-filters-json-file
-                  
-kafka-cluster-links --bootstrap-server localhost:9093 \
-                       --delete \
-                       --link demo-link
-                       
-kafka-mirrors --promote --topics example-topic --link example-link --bootstrap-server localhost:9093
-
-                       
-
+ kafka-mirrors --create --mirror-topic demo --link demo-link \
+--bootstrap-server localhost:9093      
+```
+6. Wait for sometime and see consumer group has been replicated to new cluster
+```
+kafka-consumer-groups --bootstrap-server localhost:9093 --describe --group srcgrp
+```
+7. Destroy the clusters, and cleanup
+```
+kafka-server-stop
+zookeeper-server-stop
+./cleanup.sh
+```

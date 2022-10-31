@@ -5,7 +5,7 @@ Objective of this project is to create an example project to execute various sce
 1. Confluent platform
 2. tmux (optional)
 
-## Steps
+## Scenario 1 - liniking a topic
 1. Run source kafka cluster
 ```
 zookeeper-server-start src/zookeeper.properties 
@@ -42,7 +42,7 @@ kafka-cluster-links --bootstrap-server localhost:9093 \
       --create --link demo-link --config-file link-config.txt \
       --consumer-group-filters-json-file consumer-offset-filter.properties
 
- kafka-mirrors --create --mirror-topic demo --link demo-link \
+kafka-mirrors --create --mirror-topic demo --link demo-link \
 --bootstrap-server localhost:9093      
 ```
 6. Wait for sometime and see consumer group has been replicated to new cluster
@@ -50,6 +50,69 @@ kafka-cluster-links --bootstrap-server localhost:9093 \
 kafka-consumer-groups --bootstrap-server localhost:9093 --describe --group srcgrp
 ```
 7. Destroy the clusters, and cleanup
+```
+kafka-server-stop
+zookeeper-server-stop
+./cleanup.sh
+```
+## Scenario 2 - liniking topics using filter
+1. Run source kafka cluster
+```
+zookeeper-server-start src/zookeeper.properties 
+
+kafka-server-start src/server.properties 
+```
+2. Load data into `demo` topic
+```
+kafka-console-producer --bootstrap-server localhost:9092 --topic demo <<EOF
+Arijit
+Is
+Not
+so
+Good
+Boy
+EOF
+
+kafka-console-producer --bootstrap-server localhost:9092 --topic demo.1 <<EOF
+Arijit
+Is
+Not
+so
+Good
+Boy
+EOF
+
+kafka-console-producer --bootstrap-server localhost:9092 --topic demo.2 <<EOF
+Arijit
+Is
+Not
+so
+Good
+Boy
+EOF
+
+```
+3. Start cluster 2
+```
+zookeeper-server-start dest/zookeeper.properties 
+
+kafka-server-start dest/server.properties 
+```
+4. Create cluster link
+```
+kafka-cluster-links --bootstrap-server localhost:9093 \
+      --create --link demo-link --config-file link-config.txt \
+      --consumer-group-filters-json-file consumer-offset-filter.properties \
+      --topic-filters-json-file topic-filter.json
+
+kafka-mirrors --create --mirror-topic demo --link demo-link \
+--bootstrap-server localhost:9093      
+```
+5. Wait for sometime and see topics has been replicated to new cluster
+```
+kafka-topics --bootstrap-server localhost:9093 --list 
+```
+6. Destroy the clusters, and cleanup
 ```
 kafka-server-stop
 zookeeper-server-stop

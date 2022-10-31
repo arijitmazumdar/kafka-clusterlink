@@ -2,3 +2,4 @@ bootstrap.servers=localhost:9092
 consumer.offset.sync.ms=1000
 topic.config.sync.ms=1000
 consumer.offset.sync.enable=true
+auto.create.mirror.topics.enable=true

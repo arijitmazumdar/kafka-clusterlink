@@ -1,6 +1,10 @@
 # Kafka cluster link setup
 Objective of this project is to create an example project to execute various scenario for cluster linking provided by Confluent
 
+## Prerequisite
+1. Confluent platform
+2. tmux (optional)
+
 ## Steps
 1. Run source kafka cluster
 ```
